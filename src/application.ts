@@ -1,12 +1,13 @@
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
+import {RepositoryMixin} from '@loopback/repository';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
-import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
+import * as dotenv from 'dotenv';
 import path from 'path';
 import {MySequence} from './sequence';
 
@@ -17,7 +18,7 @@ export class NatourApplication extends BootMixin(
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
-
+    dotenv.config();
     // Set up the custom sequence
     this.sequence(MySequence);
 
