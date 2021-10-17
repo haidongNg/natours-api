@@ -5,7 +5,7 @@ export class Member extends Entity {
   @property({
     type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
   })
   id?: string;
 
@@ -20,7 +20,6 @@ export class Member extends Entity {
     required: true,
   })
   name: string;
-
 
   constructor(data?: Partial<Member>) {
     super(data);

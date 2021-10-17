@@ -1,10 +1,12 @@
+import {AuthenticationComponent} from '@loopback/authentication';
+import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
-  RestExplorerComponent,
+  RestExplorerComponent
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as dotenv from 'dotenv';
@@ -19,6 +21,12 @@ export class NatourApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
     dotenv.config();
+
+    // Bind authentication component related elements
+    this.component(AuthenticationComponent);
+    this.component(JWTAuthenticationComponent)
+
+
     // Set up the custom sequence
     this.sequence(MySequence);
 

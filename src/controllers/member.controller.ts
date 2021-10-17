@@ -1,19 +1,11 @@
+import {FilterExcludingWhere, repository} from '@loopback/repository';
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
-  put,
-  del,
+  post,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +15,7 @@ import {MemberRepository} from '../repositories';
 export class MemberController {
   constructor(
     @repository(MemberRepository)
-    public memberRepository : MemberRepository,
+    public memberRepository: MemberRepository,
   ) {}
 
   @post('/members')
@@ -47,54 +39,6 @@ export class MemberController {
     return this.memberRepository.create(member);
   }
 
-  @get('/members/count')
-  @response(200, {
-    description: 'Member model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Member) where?: Where<Member>,
-  ): Promise<Count> {
-    return this.memberRepository.count(where);
-  }
-
-  @get('/members')
-  @response(200, {
-    description: 'Array of Member model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Member, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async find(
-    @param.filter(Member) filter?: Filter<Member>,
-  ): Promise<Member[]> {
-    return this.memberRepository.find(filter);
-  }
-
-  @patch('/members')
-  @response(200, {
-    description: 'Member PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Member, {partial: true}),
-        },
-      },
-    })
-    member: Member,
-    @param.where(Member) where?: Where<Member>,
-  ): Promise<Count> {
-    return this.memberRepository.updateAll(member, where);
-  }
-
   @get('/members/{id}')
   @response(200, {
     description: 'Member model instance',
@@ -106,7 +50,8 @@ export class MemberController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Member, {exclude: 'where'}) filter?: FilterExcludingWhere<Member>
+    @param.filter(Member, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Member>,
   ): Promise<Member> {
     return this.memberRepository.findById(id, filter);
   }
@@ -127,17 +72,6 @@ export class MemberController {
     member: Member,
   ): Promise<void> {
     await this.memberRepository.updateById(id, member);
-  }
-
-  @put('/members/{id}')
-  @response(204, {
-    description: 'Member PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() member: Member,
-  ): Promise<void> {
-    await this.memberRepository.replaceById(id, member);
   }
 
   @del('/members/{id}')
