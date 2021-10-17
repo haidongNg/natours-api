@@ -58,7 +58,11 @@
     "@loopback/rest-explorer": "^3.3.3",
     "@loopback/security": "^0.5.3",
     "@loopback/service-proxy": "^3.2.3",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/lodash": "^4.14.175",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^10.0.0",
+    "lodash": "^4.17.21",
     "loopback-connector-postgresql": "^5.4.0",
     "tslib": "^2.0.0"
   },

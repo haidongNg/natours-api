@@ -1,4 +1,11 @@
-import {FilterExcludingWhere, repository} from '@loopback/repository';
+import {UserServiceBindings} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {
+  FilterExcludingWhere,
+  model,
+  property,
+  repository,
+} from '@loopback/repository';
 import {
   del,
   get,
@@ -11,11 +18,23 @@ import {
 } from '@loopback/rest';
 import {Member} from '../models';
 import {MemberRepository} from '../repositories';
+import {MemberManagementService} from '../services';
+
+@model()
+export class NewUserRequest extends Member {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+}
 
 export class MemberController {
   constructor(
     @repository(MemberRepository)
     public memberRepository: MemberRepository,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public memberManagementService: MemberManagementService,
   ) {}
 
   @post('/members')
@@ -27,16 +46,16 @@ export class MemberController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Member, {
+          schema: getModelSchemaRef(NewUserRequest, {
             title: 'NewMember',
             exclude: ['id'],
           }),
         },
       },
     })
-    member: Omit<Member, 'id'>,
+    newUserRequest: Omit<NewUserRequest, 'id'>,
   ): Promise<Member> {
-    return this.memberRepository.create(member);
+    return this.memberManagementService.createMember(newUserRequest);
   }
 
   @get('/members/{id}')

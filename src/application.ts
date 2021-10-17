@@ -6,12 +6,15 @@ import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
-  RestExplorerComponent
+  RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import {PasswordHasherBindings, UserServiceBindings} from './keys';
 import {MySequence} from './sequence';
+import {MemberManagementService} from './services';
+import {BcryptHasher} from './services/hash.password.bcryptjs';
 
 export {ApplicationConfig};
 
@@ -21,11 +24,11 @@ export class NatourApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
     dotenv.config();
-
     // Bind authentication component related elements
     this.component(AuthenticationComponent);
-    this.component(JWTAuthenticationComponent)
+    this.component(JWTAuthenticationComponent);
 
+    this.setUpBindings();
 
     // Set up the custom sequence
     this.sequence(MySequence);
@@ -49,5 +52,15 @@ export class NatourApplication extends BootMixin(
         nested: true,
       },
     };
+  }
+
+  setUpBindings(): void {
+    // Bind bcrypt hash services
+    this.bind(PasswordHasherBindings.ROUNDS).to(12);
+    this.bind(PasswordHasherBindings.PASSWORD_HASHER).toClass(BcryptHasher);
+
+    this.bind(UserServiceBindings.USER_SERVICE).toClass(
+      MemberManagementService,
+    );
   }
 }
