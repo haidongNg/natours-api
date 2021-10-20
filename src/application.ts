@@ -1,5 +1,11 @@
-import {AuthenticationComponent} from '@loopback/authentication';
-import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
+import {
+  AuthenticationComponent,
+  registerAuthenticationStrategy,
+} from '@loopback/authentication';
+import {
+  JWTAuthenticationComponent,
+  TokenServiceBindings,
+} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -9,11 +15,17 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
+import crypto from 'crypto';
 import * as dotenv from 'dotenv';
+import ms from 'ms';
 import path from 'path';
 import {PasswordHasherBindings, UserServiceBindings} from './keys';
 import {MySequence} from './sequence';
-import {MemberManagementService} from './services';
+import {
+  JWTAuthenticationStrategy,
+  JwtService,
+  MemberManagementService,
+} from './services';
 import {BcryptHasher} from './services/hash.password.bcryptjs';
 
 export {ApplicationConfig};
@@ -25,9 +37,14 @@ export class NatourApplication extends BootMixin(
     super(options);
     dotenv.config();
     // Bind authentication component related elements
+    // Mount authentication system
     this.component(AuthenticationComponent);
+
+    // Mount jwt component
     this.component(JWTAuthenticationComponent);
 
+    // register your custom authentication strategy
+    registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
     this.setUpBindings();
 
     // Set up the custom sequence
@@ -59,8 +76,16 @@ export class NatourApplication extends BootMixin(
     this.bind(PasswordHasherBindings.ROUNDS).to(12);
     this.bind(PasswordHasherBindings.PASSWORD_HASHER).toClass(BcryptHasher);
 
+    this.bind(TokenServiceBindings.TOKEN_SERVICE).toClass(JwtService);
+
     this.bind(UserServiceBindings.USER_SERVICE).toClass(
       MemberManagementService,
     );
+
+    // Use JWT secret from JWT_SECRET environment variable if set
+    // otherwise create a random string of 64 hex digits
+    const secret = process.env.JWT_SECRET ?? crypto.randomBytes(32).toString();
+    this.bind(TokenServiceBindings.TOKEN_SECRET).to(secret);
+    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to(ms(7200000));
   }
 }

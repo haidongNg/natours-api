@@ -18,17 +18,44 @@ export class MemberManagementService
     public passwordHasher: PasswordHasher,
   ) {}
 
+  /**
+   * Check Login
+   *
+   * @param credentials
+   * @returns
+   */
   async verifyCredentials(credentials: Credentials): Promise<Member> {
-    // TODO
-    const {email} = credentials;
+    const {email, password} = credentials;
     const invalidCredentialsError = 'Invalid email or password.';
+
+    // Check email
     if (!email) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
     }
     const foundUser = await this.memberRepository.findOne({
       where: {email},
     });
+
+    // Check user
     if (!foundUser) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    // Check password
+    const credentialsFound = await this.memberRepository.findCredentials(
+      foundUser.id,
+    );
+    if (!credentialsFound) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    // Compare password
+    const passwordMatched = await this.passwordHasher.comparePassword(
+      password,
+      credentialsFound.password,
+    );
+
+    if (!passwordMatched) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
     }
 
@@ -42,7 +69,7 @@ export class MemberManagementService
    * @returns
    */
   convertToUserProfile(member: Member): UserProfile {
-    // TODO
+    //TODO
     // since first name and lastName are optional, no error is thrown if not provided
     return {
       [securityId]: String(member.id),

@@ -20,6 +20,11 @@ export class MemberCredentials extends Entity {
   })
   memberId?: string;
 
+  // @property({
+  //   type: 'date',
+  // })
+  // passwordChangeAt: Date
+
   constructor(data?: Partial<MemberCredentials>) {
     super(data);
   }
