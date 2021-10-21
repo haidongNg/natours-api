@@ -9,24 +9,11 @@ import {
   mergeOpenAPISpec,
   OASEnhancer,
   OpenApiSpec,
-  ReferenceObject,
-  SecuritySchemeObject,
 } from '@loopback/rest';
 import debugModule from 'debug';
 import {inspect} from 'util';
+import {SECURITY_SCHEME_SPEC} from '../utils';
 const debug = debugModule('loopback:jwt-extension:spec-enhancer');
-
-export type SecuritySchemeObjects = {
-  [securityScheme: string]: SecuritySchemeObject | ReferenceObject;
-};
-
-export const SECURITY_SCHEME_SPEC: SecuritySchemeObjects = {
-  jwt: {
-    type: 'http',
-    scheme: 'bearer',
-    bearerFormat: 'JWT',
-  },
-};
 
 /**
  * A spec enhancer to add bearer token OpenAPI security entry to
