@@ -1,11 +1,10 @@
 import {asAuthStrategy, AuthenticationStrategy} from '@loopback/authentication';
 import {inject, injectable} from '@loopback/context';
-import {asSpecEnhancer, HttpErrors, Request} from '@loopback/rest';
+import {HttpErrors, Request} from '@loopback/rest';
 import {UserProfile} from '@loopback/security';
 import {JWTAuthenticationStrategyBindings} from '../keys';
 import {JwtService} from './jwt.service';
-
-@injectable(asAuthStrategy, asSpecEnhancer)
+@injectable(asAuthStrategy)
 export class JWTAuthenticationStrategy implements AuthenticationStrategy {
   name = 'jwt';
   constructor(

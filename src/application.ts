@@ -82,6 +82,8 @@ export class NatourApplication extends BootMixin(
       MemberManagementService,
     );
 
+    // this.add(createBindingFromClass(SecuritySpecEnhancer));
+
     // Use JWT secret from JWT_SECRET environment variable if set
     // otherwise create a random string of 64 hex digits
     const secret = process.env.JWT_SECRET ?? crypto.randomBytes(32).toString();
