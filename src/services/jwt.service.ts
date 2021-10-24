@@ -36,7 +36,7 @@ export class JwtService implements TokenService {
           [securityId]: decodedToken.id,
           name: decodedToken.name,
           id: decodedToken.id,
-          // roles: decodedToken.roles,
+          roles: decodedToken.roles,
         },
       );
     } catch (error) {

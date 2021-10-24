@@ -75,6 +75,7 @@ export class MemberManagementService
       [securityId]: String(member.id),
       name: member.name,
       id: member.id,
+      roles: member.roles,
     };
   }
 

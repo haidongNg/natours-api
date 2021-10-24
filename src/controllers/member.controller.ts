@@ -7,6 +7,7 @@ import {
   TokenServiceBindings,
   UserServiceBindings,
 } from '@loopback/authentication-jwt';
+import {authorize} from '@loopback/authorization';
 import {inject} from '@loopback/core';
 import {
   FilterExcludingWhere,
@@ -45,6 +46,14 @@ export class NewUserRequest extends Member {
   })
   password: string;
 }
+const RESOURCE_NAME = 'project';
+const ACL_MEMBER = {
+  'view-all': {
+    resource: `${RESOURCE_NAME}*`,
+    scopes: ['view-all'],
+    allowedRoles: ['admin'],
+  },
+};
 
 export class MemberController {
   constructor(
@@ -87,6 +96,7 @@ export class MemberController {
   }
 
   @authenticate('jwt')
+  @authorize(ACL_MEMBER['view-all'])
   @get('/members/{id}')
   @response(200, {
     description: 'Member model instance',

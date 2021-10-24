@@ -6,6 +6,7 @@ import {
   JWTAuthenticationComponent,
   TokenServiceBindings,
 } from '@loopback/authentication-jwt';
+import {AuthorizationComponent} from '@loopback/authorization';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -19,6 +20,7 @@ import crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import ms from 'ms';
 import path from 'path';
+import {CasbinAuthorizationComponent} from './components/casbin-authorization';
 import {PasswordHasherBindings, UserServiceBindings} from './keys';
 import {MySequence} from './sequence';
 import {
@@ -39,12 +41,13 @@ export class NatourApplication extends BootMixin(
     // Bind authentication component related elements
     // Mount authentication system
     this.component(AuthenticationComponent);
+    this.component(AuthorizationComponent);
 
     // Mount jwt component
     this.component(JWTAuthenticationComponent);
-
     // register your custom authentication strategy
     registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
+    this.component(CasbinAuthorizationComponent);
     this.setUpBindings();
 
     // Set up the custom sequence

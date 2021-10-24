@@ -22,6 +22,13 @@ export class Member extends Entity {
   })
   name: string;
 
+  @property({
+    type: 'array',
+    itemType: 'string',
+    default: ['customer'],
+  })
+  roles: string[];
+
   @hasOne(() => MemberCredentials)
   memberCredentials: MemberCredentials;
 

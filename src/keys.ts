@@ -28,3 +28,5 @@ export namespace JWTAuthenticationStrategyBindings {
     'authentication.jwt.secret',
   );
 }
+
+export const RESOURCE_ID = BindingKey.create<string>('resourceId');
