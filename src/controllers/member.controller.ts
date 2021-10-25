@@ -27,8 +27,9 @@ import {
   response,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
+import {SentMessageInfo} from 'nodemailer';
 import {PasswordHasherBindings} from '../keys';
-import {Member} from '../models';
+import {Member, ResetPasswordInit} from '../models';
 import {Credentials, MemberRepository} from '../repositories';
 import {MemberManagementService} from '../services';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
@@ -221,5 +222,28 @@ export class MemberController {
     const token = await this.jwtService.generateToken(memberProfile);
 
     return {token};
+  }
+
+  @post('members/reset-password/init')
+  @response(200, {
+    description: 'Confirmation that reset password email has been sent',
+  })
+  async resetPasswordInit(
+    @requestBody() resetPasswordInit: ResetPasswordInit,
+  ): Promise<string> {
+    if (!resetPasswordInit.email) {
+      throw new HttpErrors.UnprocessableEntity('Invalid email address');
+    }
+
+    const sentMessageInfo: SentMessageInfo =
+      await this.memberManagementService.requestPasswordReset(
+        resetPasswordInit.email,
+      );
+    if (sentMessageInfo.accepted.length) {
+      return 'Successfully sent reset password link';
+    }
+    throw new HttpErrors.InternalServerError(
+      'Error sending reset password email',
+    );
   }
 }

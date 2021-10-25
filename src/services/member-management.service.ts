@@ -4,9 +4,11 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
+import {SentMessageInfo} from 'nodemailer';
 import {PasswordHasherBindings} from '../keys';
 import {Member, MemberWithPassword} from '../models';
 import {Credentials, MemberRepository} from '../repositories';
+import {EmailService} from './email.service';
 import {PasswordHasher} from './hash.password.bcryptjs';
 
 export class MemberManagementService
@@ -16,6 +18,7 @@ export class MemberManagementService
     @repository(MemberRepository) public memberRepository: MemberRepository,
     @inject(PasswordHasherBindings.PASSWORD_HASHER)
     public passwordHasher: PasswordHasher,
+    @inject('services.EmailService') public emailService: EmailService,
   ) {}
 
   /**
@@ -103,5 +106,25 @@ export class MemberManagementService
       .memberCredentials(member.id)
       .create({password: memberWithPassword.password});
     return member;
+  }
+
+  /**
+   * Reset password and send mail
+   *
+   * @param email string
+   * @returns
+   */
+  async requestPasswordReset(email: string): Promise<SentMessageInfo> {
+    const noAccountFoundError =
+      'No account associated with the provided email address.';
+    const foundUser = await this.memberRepository.findOne({
+      where: {email},
+    });
+
+    if (!foundUser) {
+      throw new HttpErrors.NotFound(noAccountFoundError);
+    }
+
+    return this.emailService.sendResetPasswordMail(foundUser);
   }
 }

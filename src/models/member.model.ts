@@ -32,6 +32,26 @@ export class Member extends Entity {
   @hasOne(() => MemberCredentials)
   memberCredentials: MemberCredentials;
 
+  @property({
+    type: 'string',
+  })
+  resetKey?: string;
+
+  @property({
+    type: 'number',
+  })
+  resetCount: number;
+
+  @property({
+    type: 'string',
+  })
+  resetTimestamp: string;
+
+  @property({
+    type: 'string',
+  })
+  resetKeyTimestamp: string;
+
   constructor(data?: Partial<Member>) {
     super(data);
   }
