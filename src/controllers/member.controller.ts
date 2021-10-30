@@ -23,15 +23,22 @@ import {
   param,
   patch,
   post,
+  put,
   requestBody,
   response,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
+import isemail from 'isemail';
+import _ from 'lodash';
 import {SentMessageInfo} from 'nodemailer';
 import {PasswordHasherBindings} from '../keys';
-import {Member, ResetPasswordInit} from '../models';
+import {KeyAndPassword, Member, ResetPasswordInit} from '../models';
 import {Credentials, MemberRepository} from '../repositories';
-import {MemberManagementService} from '../services';
+import {
+  MemberManagementService,
+  validateCredentials,
+  validateKeyPassword,
+} from '../services';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {
   CredentialsRequestBody,
@@ -93,6 +100,13 @@ export class MemberController {
     })
     newUserRequest: Omit<NewUserRequest, 'id'>,
   ): Promise<Member> {
+    // All new users have the "customer" role by default
+    newUserRequest.roles = ['customer'];
+
+    // ensure a valid email value and password value
+    validateCredentials(_.pick(newUserRequest, ['email', 'password']));
+
+    newUserRequest.resetKey = '';
     return this.memberManagementService.createMember(newUserRequest);
   }
 
@@ -211,6 +225,8 @@ export class MemberController {
       throw new HttpErrors.Forbidden('Invalid email address');
     }
 
+    validateCredentials(_.pick(credentials, ['email', 'password']));
+
     const passwordHash = await this.passwordHasher.hashPassword(password);
 
     await this.memberRepository
@@ -231,7 +247,7 @@ export class MemberController {
   async resetPasswordInit(
     @requestBody() resetPasswordInit: ResetPasswordInit,
   ): Promise<string> {
-    if (!resetPasswordInit.email) {
+    if (!isemail.validate(resetPasswordInit.email)) {
       throw new HttpErrors.UnprocessableEntity('Invalid email address');
     }
 
@@ -239,11 +255,54 @@ export class MemberController {
       await this.memberManagementService.requestPasswordReset(
         resetPasswordInit.email,
       );
+
     if (sentMessageInfo.accepted.length) {
       return 'Successfully sent reset password link';
     }
+
     throw new HttpErrors.InternalServerError(
       'Error sending reset password email',
     );
+  }
+
+  @put('/members/reset-password/finish')
+  @response(200, {
+    description: 'A successful password reset response',
+  })
+  async resetPasswordFinish(
+    @requestBody() keyAndPassword: KeyAndPassword,
+  ): Promise<string> {
+    // Validator
+    validateKeyPassword(keyAndPassword);
+
+    const foundMember = await this.memberRepository.findOne({
+      where: {resetKey: keyAndPassword.resetKey},
+    });
+
+    if (!foundMember) {
+      throw new HttpErrors.NotFound(
+        'No associated account for the provided reset key',
+      );
+    }
+
+    const user = await this.memberManagementService.validateResetKeyLifeSpan(
+      foundMember,
+    );
+
+    const passwordHash = await this.passwordHasher.hashPassword(
+      keyAndPassword.password,
+    );
+
+    try {
+      await this.memberRepository
+        .memberCredentials(user.id)
+        .patch({password: passwordHash});
+
+      await this.memberRepository.updateById(user.id, user);
+    } catch (e) {
+      return e;
+    }
+
+    return 'Password reset successful';
   }
 }

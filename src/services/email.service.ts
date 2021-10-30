@@ -21,19 +21,19 @@ export class EmailService {
     });
   }
 
-  async sendResetPasswordMail(user: Member): Promise<SentMessageInfo> {
+  async sendResetPasswordMail(member: Member): Promise<SentMessageInfo> {
     const transporter = await EmailService.setupTransporter();
 
     // Create template
     const emailTemplate = new EmailTemplate({
-      to: user.email,
+      to: member.email,
       subject: '[Natour] Reset Password Request',
       html: `
       <div>
-        <p>Hello, ${user.name}</p>
-        <p style="color: red;">We received a request to reset the password for your account with email address: ${user.email}</p>
+        <p>Hello, ${member.name}</p>
+        <p style="color: red;">We received a request to reset the password for your account with email address: ${member.email}</p>
         <p>To reset your password click on the link provided below</p>
-        <a href="${process.env.APPLICATION_URL}/reset-password-finish.html?resetKey=${user.resetKey}">Reset your password link</a>
+        <a href="${process.env.APPLICATION_URL}/reset-password-finish.html?resetKey=${member.resetKey}">Reset your password link</a>
         <p>If you didn’t request to reset your password, please ignore this email or reset your password to protect your account.</p>
         <p>Thanks</p>
         <p>LoopBack'ers at Natour</p>

@@ -5,9 +5,11 @@ import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {SentMessageInfo} from 'nodemailer';
+import {v4 as uuidv4} from 'uuid';
 import {PasswordHasherBindings} from '../keys';
 import {Member, MemberWithPassword} from '../models';
 import {Credentials, MemberRepository} from '../repositories';
+import {subtractDates} from '../utils';
 import {EmailService} from './email.service';
 import {PasswordHasher} from './hash.password.bcryptjs';
 
@@ -125,6 +127,63 @@ export class MemberManagementService
       throw new HttpErrors.NotFound(noAccountFoundError);
     }
 
-    return this.emailService.sendResetPasswordMail(foundUser);
+    const member = await this.updateResetRequestLimit(foundUser);
+
+    try {
+      await this.memberRepository.updateById(member.id, member);
+    } catch (e) {
+      return e;
+    }
+    return this.emailService.sendResetPasswordMail(member);
+  }
+
+  /**
+   * Checks user reset timestamp if its same day increase count
+   * otherwise set current date as timestamp and start counting
+   * For first time reset request set reset count to 1 and assign same day timestamp
+   * @param user
+   */
+  async updateResetRequestLimit(member: Member): Promise<Member> {
+    const resetTimestampDate = new Date(member.resetKeyTimestamp);
+
+    const difference = await subtractDates(resetTimestampDate);
+
+    if (difference === 0) {
+      member.resetCount = member.resetCount + 1;
+
+      if (member.resetCount > +(process.env.PASSWORD_RESET_EMAIL_LIMIT ?? 2)) {
+        throw new HttpErrors.TooManyRequests(
+          'Account has reached daily limit for sending password-reset requests',
+        );
+      }
+    } else {
+      member.resetTimestamp = new Date().toLocaleDateString();
+      member.resetCount = 1;
+    }
+
+    // For generating unique reset key there are other options besides the proposed solution below.
+    // Feel free to use whatever option works best for your needs
+    member.resetKey = uuidv4();
+    member.resetKeyTimestamp = new Date().toLocaleDateString();
+
+    return member;
+  }
+
+  /**
+   * Ensures reset key is only valid for a day
+   * @param member
+   */
+  async validateResetKeyLifeSpan(member: Member): Promise<Member> {
+    const resetKeyLifeSpan = new Date(member.resetKeyTimestamp);
+    const difference = await subtractDates(resetKeyLifeSpan);
+
+    member.resetKey = '';
+    member.resetKeyTimestamp = '';
+
+    if (difference !== 0) {
+      throw new HttpErrors.BadRequest('The provided reset key has expired.');
+    }
+
+    return member;
   }
 }
