@@ -40,6 +40,7 @@ import {
   validateKeyPassword,
 } from '../services';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
+import {funcFilterObj} from '../utils';
 import {
   CredentialsRequestBody,
   MemberProfileSchema,
@@ -54,6 +55,8 @@ export class NewUserRequest extends Member {
   })
   password: string;
 }
+
+// TODO
 const RESOURCE_NAME = 'project';
 const ACL_MEMBER = {
   'view-all': {
@@ -129,6 +132,13 @@ export class MemberController {
     return this.memberRepository.findById(id, filter);
   }
 
+  /**
+   * Update me
+   *
+   * @param id
+   * @param member
+   */
+  @authenticate('jwt')
   @patch('/members/{id}')
   @response(204, {
     description: 'Member PATCH success',
@@ -144,15 +154,35 @@ export class MemberController {
     })
     member: Member,
   ): Promise<void> {
-    await this.memberRepository.updateById(id, member);
+    // Get member from db
+    const updateMember = await this.memberRepository.findById(id);
+
+    // Check exists
+    if (!updateMember) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
+
+    // Fields out unwated fields names that are not allowed to be updated
+    const fieldMember = funcFilterObj(member, 'name');
+    await this.memberRepository.updateById(id, fieldMember);
   }
 
+  /**
+   * Delete member
+   *
+   * @param id
+   */
+  @authenticate('jwt')
   @del('/members/{id}')
   @response(204, {
     description: 'Member DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.memberRepository.deleteById(id);
+    const foundMember = await this.memberRepository.findById(id);
+    if (!foundMember) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
+    await this.memberRepository.updateById(id, {active: false});
   }
 
   /**
@@ -215,6 +245,8 @@ export class MemberController {
     const {email, password} = credentials;
 
     const {id} = currentUserProfile;
+
+    // Get member from db
     const member = await this.memberRepository.findById(id);
 
     if (!member) {
@@ -225,16 +257,21 @@ export class MemberController {
       throw new HttpErrors.Forbidden('Invalid email address');
     }
 
+    // Valicate email and password
     validateCredentials(_.pick(credentials, ['email', 'password']));
 
+    // password hasher
     const passwordHash = await this.passwordHasher.hashPassword(password);
 
+    // Update password
     await this.memberRepository
       .memberCredentials(member.id)
       .patch({password: passwordHash});
 
+    // Convert member
     const memberProfile = this.userService.convertToUserProfile(member);
 
+    // Create send token
     const token = await this.jwtService.generateToken(memberProfile);
 
     return {token};
@@ -275,6 +312,7 @@ export class MemberController {
     // Validator
     validateKeyPassword(keyAndPassword);
 
+    // Get resetkey from db
     const foundMember = await this.memberRepository.findOne({
       where: {resetKey: keyAndPassword.resetKey},
     });
@@ -285,14 +323,17 @@ export class MemberController {
       );
     }
 
+    // Check validate resetKey life span
     const user = await this.memberManagementService.validateResetKeyLifeSpan(
       foundMember,
     );
 
+    // Password hasher
     const passwordHash = await this.passwordHasher.hashPassword(
       keyAndPassword.password,
     );
 
+    // update password
     try {
       await this.memberRepository
         .memberCredentials(user.id)

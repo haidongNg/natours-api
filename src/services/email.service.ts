@@ -30,7 +30,7 @@ export class EmailService {
       subject: '[Natour] Reset Password Request',
       html: `
       <div>
-        <p>Hello, ${member.name}</p>
+        <p>Hello,  ${member.firstName} ${member.lastName}</p>
         <p style="color: red;">We received a request to reset the password for your account with email address: ${member.email}</p>
         <p>To reset your password click on the link provided below</p>
         <a href="${process.env.APPLICATION_URL}/reset-password-finish.html?resetKey=${member.resetKey}">Reset your password link</a>

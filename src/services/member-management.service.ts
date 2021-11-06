@@ -38,7 +38,7 @@ export class MemberManagementService
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
     }
     const foundUser = await this.memberRepository.findOne({
-      where: {email},
+      where: {email, active: true},
     });
 
     // Check user
@@ -74,11 +74,16 @@ export class MemberManagementService
    * @returns
    */
   convertToUserProfile(member: Member): UserProfile {
-    //TODO
     // since first name and lastName are optional, no error is thrown if not provided
+    let userName = '';
+    if (member.firstName) userName = `${member.firstName}`;
+    if (member.lastName)
+      userName = member.firstName
+        ? `${userName} ${member.lastName}`
+        : `${member.lastName}`;
     return {
       [securityId]: String(member.id),
-      name: member.name,
+      name: userName,
       id: member.id,
       roles: member.roles,
     };

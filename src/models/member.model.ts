@@ -20,7 +20,13 @@ export class Member extends Entity {
     type: 'string',
     required: true,
   })
-  name: string;
+  lastName: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  firstName: string;
 
   @property({
     type: 'array',
@@ -28,6 +34,12 @@ export class Member extends Entity {
     default: ['customer'],
   })
   roles: string[];
+
+  @property({
+    type: 'boolean',
+    default: true,
+  })
+  active: boolean;
 
   @hasOne(() => MemberCredentials)
   memberCredentials: MemberCredentials;
