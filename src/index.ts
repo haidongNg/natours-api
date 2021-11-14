@@ -31,6 +31,7 @@ if (require.main === module) {
         // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
       },
+      requestBodyParser: {json: {limit: '1mb'}},
     },
   };
   main(config).catch(err => {
